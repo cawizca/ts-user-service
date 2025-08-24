@@ -8,6 +8,7 @@ import {
   Post,
   Request,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -15,11 +16,12 @@ import { RefreshAuthGuard } from './guard/refresh-auth.guard';
 import { Request as Req } from 'express';
 import { ApiBody } from '@nestjs/swagger';
 import {
-  SignInDto,
-  SignUpDto,
+  SignInSwagger,
+  SignUpSwagger,
   UsernameDto,
   UserResponseDto,
 } from 'src/swagger/auth.swagger';
+import { SignInDto, SignUpDto } from './types/auth.type';
 
 @Controller('auth')
 export class AuthController {
@@ -28,7 +30,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  @ApiBody({ type: SignInDto })
+  @ApiBody({ type: SignInSwagger })
   /**
    * Authenticates a user using the provided credentials, logs the attempt, and delegates
    * authentication to the underlying service. Handles error logging and propagates exceptions.
@@ -39,16 +41,13 @@ export class AuthController {
    *
    * @throws {Error} Throws if authentication fails or an unexpected error occurs during sign-in.
    */
-  async signIn(@Body() signInDto: SignInDto) {
-    this.logger.log(`Signing in user: ${signInDto.username}`);
+  async signIn(@Body(new ValidationPipe()) signInDto: SignInDto) {
+    this.logger.log(`Signing in user: ${signInDto.email}`);
     try {
-      return await this.authService.signIn(
-        signInDto.username,
-        signInDto.password
-      );
+      return await this.authService.signIn(signInDto.email, signInDto.password);
     } catch (error) {
       this.logger.error(
-        `Sign in failed for user: ${signInDto.username}`,
+        `Sign in failed for user: ${signInDto.email}`,
         error.stack
       );
       throw error;
@@ -57,7 +56,7 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('signup')
-  @ApiBody({ type: SignUpDto })
+  @ApiBody({ type: SignUpSwagger })
   /**
    * Registers a new user using the provided credentials, logs the attempt, and delegates
    * registration to the underlying service. Handles error logging and propagates exceptions.
@@ -69,15 +68,12 @@ export class AuthController {
    * @throws {Error} Throws if registration fails or an unexpected error occurs during sign-up.
    */
   async signUp(@Body() signUpDto: SignUpDto) {
-    this.logger.log(`Signing up user: ${signUpDto.username}`);
+    this.logger.log(`Signing up user: ${signUpDto.email}`);
     try {
-      return await this.authService.signUp(
-        signUpDto.username,
-        signUpDto.password
-      );
+      return await this.authService.signUp(signUpDto.email, signUpDto.password);
     } catch (error) {
       this.logger.error(
-        `Sign up failed for user: ${signUpDto.username}`,
+        `Sign up failed for user: ${signUpDto.email}`,
         error.stack
       );
       throw error;

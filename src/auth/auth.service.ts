@@ -55,21 +55,21 @@ export class AuthService {
    * @throws {UnauthorizedException} Throws if the user does not exist or if the password is invalid.
    */
   async signIn(
-    username: string,
+    email: string,
     pass: string
   ): Promise<{ access_token: string; refresh_token: string }> {
     try {
-      this.logger.log(`Signing in user: ${username}`);
-      const user = await this._usersService.findOne(username);
+      this.logger.log(`Signing in user: ${email}`);
+      const user = await this._usersService.findOne(email);
       if (!user) {
         throw new UnauthorizedException();
       }
-      this.logger.log(`User ${username} found.`);
+      this.logger.log(`User ${email} found.`);
       const isPasswordValid = await comparePasswords(pass, user.password);
       if (!isPasswordValid) {
         throw new UnauthorizedException('Invalid email or password provided.');
       }
-      this.logger.log(`Password for user ${username} is valid.`);
+      this.logger.log(`Password for user ${email} is valid.`);
       const payload = { sub: user.id, email: user.email };
       return {
         access_token: await this._jwtService.signAsync(payload),
@@ -85,31 +85,31 @@ export class AuthService {
   }
 
   /**
-   * Registers a new user account with the provided username and password, validates uniqueness,
+   * Registers a new user account with the provided email and password, validates uniqueness,
    * creates the user in the database, and generates JWT access and refresh tokens for authentication.
-   * Handles conflict errors if the username is already in use.
+   * Handles conflict errors if the email is already in use.
    *
-   * @param {string} username - The username (typically an email address) to register for the new user.
+   * @param {string} email - The email  to register for the new user.
    * @param {string} pass - The password to associate with the new user account.
    *
    * @returns {Promise<{ access_token: string; refresh_token: string }>} Resolves with the generated access and refresh tokens for the newly created user.
    *
-   * @throws {ConflictException} Throws if the provided username is already registered.
+   * @throws {ConflictException} Throws if the provided email is already registered.
    * @throws {Error} Throws if an unexpected error occurs during user creation or token generation.
    */
   async signUp(
-    username: string,
+    email: string,
     pass: string
   ): Promise<{ access_token: string; refresh_token: string }> {
     try {
-      this.logger.log(`Signing up user: ${username}`);
-      const existingUser = await this._usersService.findOne(username);
+      this.logger.log(`Signing up user: ${email}`);
+      const existingUser = await this._usersService.findOne(email);
       if (existingUser) {
         throw new ConflictException('Provided email address cannot be used.');
       }
-      this.logger.log(`Creating new user: ${username}`);
-      const user = await this._usersService.create(username, pass);
-      this.logger.log(`User ${username} created successfully.`);
+      this.logger.log(`Creating new user: ${email}`);
+      const user = await this._usersService.create(email, pass);
+      this.logger.log(`User ${email} created successfully.`);
       const payload = { sub: user.id, email: user.email };
       return {
         access_token: await this._jwtService.signAsync(payload),
@@ -125,25 +125,25 @@ export class AuthService {
   }
 
   /**
-   * Generates a new access token for the user with the given username.
+   * Generates a new access token for the user with the given email.
    *
-   * @param {string} username - The username of the user for whom to generate the access token.
+   * @param {string} email - The email of the user for whom to generate the access token.
    *
    * @returns {Promise<{ access_token: string }>} Resolves with the newly generated access token.
    *
    * @throws {UnauthorizedException} Throws if the user does not exist.
    */
   async generateAccessToken({
-    username,
+    email,
   }: {
-    username: string;
+    email: string;
   }): Promise<{ access_token: string }> {
-    this.logger.log(`Generating access token for user: ${username}`);
-    const user = await this._usersService.findOne(username);
+    this.logger.log(`Generating access token for user: ${email}`);
+    const user = await this._usersService.findOne(email);
     if (!user) {
       throw new UnauthorizedException();
     }
-    this.logger.log(`User ${username} found.`);
+    this.logger.log(`User ${email} found.`);
     const payload = { sub: user.id, email: user.email };
     return {
       access_token: await this._jwtService.signAsync(payload),
