@@ -1,27 +1,31 @@
 import { ApiProperty, ApiBody } from '@nestjs/swagger';
 
-export class SignInDto {
-  @ApiProperty()
-  username: string;
+export class SignInSwagger {
+  @ApiProperty({ default: 'kavishka' })
+  email: string;
 
-  @ApiProperty()
+  @ApiProperty({ default: 'kavishka@123' })
   password: string;
 }
 
-export class SignUpDto {
-  @ApiProperty()
-  username: string;
+export class SignUpSwagger {
+  @ApiProperty({ default: 'kavishka' })
+  email: string;
 
-  @ApiProperty()
+  @ApiProperty({ default: 'kavishka@123' })
   password: string;
 }
 
 export class UsernameDto {
-  @ApiProperty()
-  username: string;
+  @ApiProperty({ default: 'kavishka' })
+  email: string;
 }
 
 export class UserResponseDto {
-  @ApiProperty({ type: 'object', additionalProperties: true })
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    default: { username: 'kavishka', id: 1 },
+  })
   user: object;
 }
