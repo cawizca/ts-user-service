@@ -8,6 +8,7 @@ export type IUser = {
   id: number;
   email: string;
   password: string;
+  role: string;
   isActive?: boolean;
 };
 

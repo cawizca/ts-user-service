@@ -18,10 +18,12 @@ import { ApiBody } from '@nestjs/swagger';
 import {
   SignInSwagger,
   SignUpSwagger,
-  UsernameDto,
   UserResponseDto,
 } from 'src/swagger/auth.swagger';
-import { SignInDto, SignUpDto } from './types/auth.type';
+import { RefreshTokenDto, SignInDto, SignUpDto } from './types/auth.type';
+import { Roles } from './roles.decorator';
+import { Role } from 'src/users/types/users.type';
+import { RolesGuard } from './guard/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -35,7 +37,7 @@ export class AuthController {
    * Authenticates a user using the provided credentials, logs the attempt, and delegates
    * authentication to the underlying service. Handles error logging and propagates exceptions.
    *
-   * @param {SignInDto} signInDto - The data transfer object containing the user's username and password.
+   * @param {SignInDto} signInDto - The data transfer object containing the user's email and password.
    *
    * @returns {Promise<any>} Resolves with the authentication result, which may include tokens or user details.
    *
@@ -61,13 +63,13 @@ export class AuthController {
    * Registers a new user using the provided credentials, logs the attempt, and delegates
    * registration to the underlying service. Handles error logging and propagates exceptions.
    *
-   * @param {SignUpDto} signUpDto - The data transfer object containing the user's username and password.
+   * @param {SignUpDto} signUpDto - The data transfer object containing the user's email and password.
    *
    * @returns {Promise<any>} Resolves with the registration result, which may include tokens or user details.
    *
    * @throws {Error} Throws if registration fails or an unexpected error occurs during sign-up.
    */
-  async signUp(@Body() signUpDto: SignUpDto) {
+  async signUp(@Body(new ValidationPipe()) signUpDto: SignUpDto) {
     this.logger.log(`Signing up user: ${signUpDto.email}`);
     try {
       return await this.authService.signUp(signUpDto.email, signUpDto.password);
@@ -83,29 +85,31 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(RefreshAuthGuard)
   @Post('refresh')
-  @ApiBody({ type: UsernameDto })
+  @ApiBody({ type: RefreshTokenDto })
   /**
-   * Refreshes the access token for the user with the given username.
+   * Refreshes the access token for the user with the given email.
    *
-   * @param {Request} req - The request object containing the user's username.
+   * @param {Request} req - The request object containing the user's email.
    *
    * @returns {Promise<any>} Resolves with the new access token.
    *
    * @throws {Error} Throws if token refresh fails or an unexpected error occurs.
    */
-  async getRefreshToken(@Request() req: Req) {
-    this.logger.log(`Refreshing token for user: ${req.body.username}`);
+  async getRefreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    this.logger.log(`Refreshing token for user: ${refreshTokenDto.email}`);
     try {
-      return await this.authService.generateAccessToken(req.body);
+      return await this.authService.generateAccessToken(refreshTokenDto);
     } catch (error) {
       this.logger.error(
-        `Token refresh failed for user: ${req.body.username}`,
+        `Token refresh failed for user: ${refreshTokenDto.email}`,
         error.stack
       );
       throw error;
     }
   }
 
+  @Roles(Role.USER, Role.ADMIN)
+  @UseGuards(RolesGuard)
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   @ApiBody({ type: UserResponseDto })

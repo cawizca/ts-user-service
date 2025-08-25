@@ -20,34 +20,34 @@ export class AuthService {
   ) {}
 
   /**
-   * Validates a user's credentials by checking the provided username and password against stored user data.
+   * Validates a user's credentials by checking the provided email and password against stored user data.
    * Retrieves the user from the database, compares the password, and returns user information excluding the password if valid.
    * Returns null if authentication fails.
    *
-   * @param {string} username - The username of the user attempting to authenticate.
+   * @param {string} email - The email of the user attempting to authenticate.
    * @param {string} pass - The plaintext password provided for authentication.
    *
    * @returns {Promise<any>} Resolves with the user object (excluding password) if credentials are valid, or null if invalid.
    *
    * @throws {Error} Throws if there is an error accessing the user data from the database.
    */
-  async validateUser(username: string, pass: string): Promise<any> {
-    this.logger.log(`Validating user: ${username}`);
-    const user = await this._usersService.findOne(username);
+  async validateUser(email: string, pass: string): Promise<any> {
+    this.logger.log(`Validating user: ${email}`);
+    const user = await this._usersService.findOne(email);
     if (user && user.password === pass) {
-      this.logger.log(`User ${username} validated successfully.`);
+      this.logger.log(`User ${email} validated successfully.`);
       const { password, ...result } = user;
       return result;
     }
-    this.logger.warn(`User ${username} validation failed.`);
+    this.logger.warn(`User ${email} validation failed.`);
     return null;
   }
 
   /**
-   * Authenticates a user by verifying the provided username and password, generates JWT access and refresh tokens,
+   * Authenticates a user by verifying the provided email and password, generates JWT access and refresh tokens,
    * and returns them upon successful authentication. Handles invalid credentials and unauthorized access attempts.
    *
-   * @param {string} username - The username of the user attempting to sign in.
+   * @param {string} email - The email of the user attempting to sign in.
    * @param {string} pass - The plaintext password provided by the user.
    *
    * @returns {Promise<{ access_token: string; refresh_token: string }>} Resolves with an object containing the JWT access and refresh tokens.
@@ -70,7 +70,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid email or password provided.');
       }
       this.logger.log(`Password for user ${email} is valid.`);
-      const payload = { sub: user.id, email: user.email };
+      const payload = { sub: user.id, email: user.email, role: user.role };
       return {
         access_token: await this._jwtService.signAsync(payload),
         refresh_token: await this._jwtService.signAsync(payload, {
@@ -110,7 +110,7 @@ export class AuthService {
       this.logger.log(`Creating new user: ${email}`);
       const user = await this._usersService.create(email, pass);
       this.logger.log(`User ${email} created successfully.`);
-      const payload = { sub: user.id, email: user.email };
+      const payload = { sub: user.id, email: user.email, role: user.role };
       return {
         access_token: await this._jwtService.signAsync(payload),
         refresh_token: await this._jwtService.signAsync(payload, {
@@ -144,9 +144,17 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     this.logger.log(`User ${email} found.`);
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     return {
       access_token: await this._jwtService.signAsync(payload),
     };
+  }
+
+  async validateUserRole(payload: any) {
+    const user = await this._usersService.findOne(payload.email);
+    if (!user || user.role !== payload.role) {
+      throw new UnauthorizedException('Unauthorized access.');
+    }
+    return { userId: payload.sub, email: payload.email, role: payload.role };
   }
 }

@@ -1,7 +1,7 @@
 import { ApiProperty, ApiBody } from '@nestjs/swagger';
 
 export class SignInSwagger {
-  @ApiProperty({ default: 'kavishka' })
+  @ApiProperty({ default: 'kavishka@gmail.com' })
   email: string;
 
   @ApiProperty({ default: 'kavishka@123' })
@@ -9,15 +9,15 @@ export class SignInSwagger {
 }
 
 export class SignUpSwagger {
-  @ApiProperty({ default: 'kavishka' })
+  @ApiProperty({ default: 'kavishka@gmail.com' })
   email: string;
 
   @ApiProperty({ default: 'kavishka@123' })
   password: string;
 }
 
-export class UsernameDto {
-  @ApiProperty({ default: 'kavishka' })
+export class RefreshTokenDto {
+  @ApiProperty({ default: 'kavishka@gmail.com' })
   email: string;
 }
 
@@ -25,7 +25,7 @@ export class UserResponseDto {
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
-    default: { username: 'kavishka', id: 1 },
+    default: { email: 'kavishka@gmail.com', id: 1 },
   })
   user: object;
 }

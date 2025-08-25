@@ -25,3 +25,10 @@ export class SignUpDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   public readonly password: string;
 }
+
+export class RefreshTokenDto {
+  @IsEmail({}, { message: 'Invalid email address' })
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  public readonly email: string;
+}
