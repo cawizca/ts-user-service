@@ -8,11 +8,13 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { RefreshStrategy } from './strategy/refresh.strategy';
 import { ConfigService } from '@nestjs/config';
+import { KafkaModule } from 'src/kafka/kafka.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    KafkaModule,
     JwtModule.registerAsync({
       imports: [],
       inject: [ConfigService],

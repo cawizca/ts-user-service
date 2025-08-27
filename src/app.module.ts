@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/users.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validationSchema } from './config/validationSchema';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -24,6 +25,22 @@ import { validationSchema } from './config/validationSchema';
       }),
       inject: [ConfigService],
     }),
+    ClientsModule.register([
+      {
+        name: 'USER_SERVICE',
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: 'user',
+            brokers: ['kafka:9092'],
+          },
+          consumer: {
+            groupId: 'user-consumer',
+          },
+        },
+      },
+    ]),
+
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: validationSchema,
