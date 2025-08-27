@@ -16,6 +16,7 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { Request as Req } from 'express';
 import { UsersService } from './users.service';
 import { User } from 'src/auth/auth.decorator';
+import { ApiBody } from '@nestjs/swagger';
 
 @Controller('users')
 export class UsersController {
