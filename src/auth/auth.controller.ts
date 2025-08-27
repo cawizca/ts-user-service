@@ -24,8 +24,9 @@ import { RefreshTokenDto, SignInDto, SignUpDto } from './types/auth.type';
 import { Roles } from './roles.decorator';
 import { Role } from 'src/users/types/users.type';
 import { RolesGuard } from './guard/roles.guard';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
-@Controller('auth')
+@Controller('/')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
   constructor(private authService: AuthService) {}
@@ -57,7 +58,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('signup')
+  @Post('register')
   @ApiBody({ type: SignUpSwagger })
   /**
    * Registers a new user using the provided credentials, logs the attempt, and delegates

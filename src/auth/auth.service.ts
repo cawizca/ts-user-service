@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -8,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { comparePasswords } from './utils/bycrypt';
 import { ConfigService } from '@nestjs/config';
+import { ClientKafka } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +18,8 @@ export class AuthService {
   constructor(
     private _usersService: UsersService,
     private _jwtService: JwtService,
-    private _configService: ConfigService
+    private _configService: ConfigService,
+    @Inject('USER_SERVICE') private readonly kafkaClient: ClientKafka
   ) {}
 
   /**
@@ -62,7 +65,7 @@ export class AuthService {
       this.logger.log(`Signing in user: ${email}`);
       const user = await this._usersService.findOne(email);
       if (!user) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Invalid email or password provided.');
       }
       this.logger.log(`User ${email} found.`);
       const isPasswordValid = await comparePasswords(pass, user.password);
@@ -71,6 +74,7 @@ export class AuthService {
       }
       this.logger.log(`Password for user ${email} is valid.`);
       const payload = { sub: user.id, email: user.email, role: user.role };
+
       return {
         access_token: await this._jwtService.signAsync(payload),
         refresh_token: await this._jwtService.signAsync(payload, {
@@ -111,6 +115,16 @@ export class AuthService {
       const user = await this._usersService.create(email, pass);
       this.logger.log(`User ${email} created successfully.`);
       const payload = { sub: user.id, email: user.email, role: user.role };
+      const eventValues = {
+        id: user.id,
+        role: user.role,
+        isActive: user.isActive,
+      };
+      this.kafkaClient.emit('user-topic', {
+        key: String(user.id),
+        value: JSON.stringify(eventValues),
+      });
+      this.logger.log(`Emitted user creation event for: ${email}`);
       return {
         access_token: await this._jwtService.signAsync(payload),
         refresh_token: await this._jwtService.signAsync(payload, {
@@ -150,6 +164,17 @@ export class AuthService {
     };
   }
 
+  /**
+   * Validates the user's role based on the provided payload.
+   *
+   * This method retrieves the user by email and checks if the user's role matches
+   * the role specified in the payload. If the user does not exist or the roles do not match,
+   * an `UnauthorizedException` is thrown.
+   *
+   * @param payload - An object containing user identification and role information.
+   * @returns An object containing the user's ID, email, and role if validation succeeds.
+   * @throws {UnauthorizedException} If the user is not found or the role does not match.
+   */
   async validateUserRole(payload: any) {
     const user = await this._usersService.findOne(payload.email);
     if (!user || user.role !== payload.role) {
